@@ -199,6 +199,9 @@ function objectToThunk(obj){
             return done(err);
           }
 
+          // multiple args
+          if (arguments.length > 2) res = slice.call(arguments, 1);
+
           results[key] = res;
           --pending || done(null, results);
         });

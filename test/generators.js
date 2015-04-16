@@ -1,6 +1,6 @@
 
-var assert = require('assert');
 var co = require('..');
+var assert = require('assert');
 
 function sleep(ms) {
   return function(done){
@@ -8,38 +8,51 @@ function sleep(ms) {
   }
 }
 
-function *work() {
+function *moreWork(calls) {
+  calls.push('three');
   yield sleep(50);
-  return 'yay';
+  calls.push('four');
 }
 
-describe('co(*)', function(){
-  describe('with a generator function', function(){
-    it('should wrap with co()', function(){
-      return co(function *(){
-        var a = yield work;
-        var b = yield work;
-        var c = yield work;
+function *work() {
+  var calls = [];
+  calls.push('one');
+  yield sleep(50);
+  calls.push('two');
+  yield moreWork(calls);
+  calls.push('five');
+  return calls;
+}
 
-        assert('yay' == a);
-        assert('yay' == b);
-        assert('yay' == c);
+describe('co(fn)', function(){
+  describe('with a generator', function(){
+    it('should wrap with co()', function(done){
+      co(function *(){
+        var calls = yield work();
+        calls.should.eql(['one', 'two', 'three', 'four', 'five']);
 
-        var res = yield [work, work, work];
-        assert.deepEqual(['yay', 'yay', 'yay'], res);
-      });
+        var a = work();
+        var b = work();
+        var c = work();
+
+        var calls = yield [a, b, c];
+        calls.should.eql([
+          [ 'one', 'two', 'three', 'four', 'five' ],
+          [ 'one', 'two', 'three', 'four', 'five' ],
+          [ 'one', 'two', 'three', 'four', 'five' ] ]);
+
+      })(done);
     })
 
-    it('should catch errors', function(){
-      return co(function *(){
+    it('should catch errors', function(done){
+      co(function *(){
         yield function *(){
           throw new Error('boom');
-        };
-      }).then(function () {
-        throw new Error('wtf')
-      }, function (err) {
+        }();
+      })(function(err){
         assert(err);
         assert(err.message == 'boom');
+        done();
       });
     })
   })

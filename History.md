@@ -1,47 +1,4 @@
 
-4.5.0 / 2015-03-17
-==================
-
- * support regular functions (that return promises)
-
-4.4.0 / 2015-02-14
-==================
-
- * refactor `isGeneratorFunction`
- * expose generator function from `co.wrap()`
- * drop support for node < 0.12
-
-4.3.0 / 2015-02-05
-==================
-
- * check for generator functions in a ES5-transpiler-friendly way
-
-4.2.0 / 2015-01-20
-==================
-
- * support comparing generator functions with ES6 transpilers
-
-4.1.0 / 2014-12-26
-==================
-
- * fix memory leak #180
-
-4.0.2 / 2014-12-18
-==================
-
- * always return a global promise implementation
-
-4.0.1 / 2014-11-30
-==================
-
- * friendlier ES6 module exports
-
-4.0.0 / 2014-11-15
-==================
-
- * co now returns a promise and uses promises underneath
- * `co.wrap()` for wrapping generator functions
-
 3.1.0 / 2014-06-30
 ==================
 
@@ -49,7 +6,7 @@
    Users are expected to shim themselves. Also returns CommonJS browser support.
  * added key order preservation for objects. thanks @greim
  * replace `q` with `bluebird` in benchmarks and tests
-
+  
 3.0.6 / 2014-05-03
 ==================
 

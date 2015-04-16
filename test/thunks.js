@@ -1,7 +1,6 @@
 
-var assert = require('assert');
-
 var co = require('..');
+var assert = require('assert');
 
 function get(val, err, error) {
   return function(done){
@@ -12,81 +11,82 @@ function get(val, err, error) {
   }
 }
 
-describe('co(* -> yield fn(done))', function () {
+describe('co(fn)', function(){
   describe('with no yields', function(){
-    it('should work', function(){
-      return co(function *(){});
+    it('should work', function(done){
+      co(function *(){
+
+      })(done);
     })
   })
 
   describe('with one yield', function(){
-    it('should work', function(){
-      return co(function *(){
+    it('should work', function(done){
+      co(function *(){
         var a = yield get(1);
-        assert.equal(1, a);
-      });
+        a.should.equal(1);
+      })(done);
     })
   })
 
   describe('with several yields', function(){
-    it('should work', function(){
-      return co(function *(){
+    it('should work', function(done){
+      co(function *(){
         var a = yield get(1);
         var b = yield get(2);
         var c = yield get(3);
 
-        assert.deepEqual([1, 2, 3], [a, b, c]);
-      });
+        [a,b,c].should.eql([1,2,3]);
+      })(done);
     })
   })
 
   describe('with many arguments', function(){
-    it('should return an array', function(){
+    it('should return an array', function(done){
       function exec(cmd) {
         return function(done){
           done(null, 'stdout', 'stderr');
         }
       }
 
-      return co(function *(){
+      co(function *(){
         var out = yield exec('something');
-        assert.deepEqual(['stdout', 'stderr'], out);
-      });
+        out.should.eql(['stdout', 'stderr']);
+      })(done);
     })
   })
 
   describe('when the function throws', function(){
-    it('should be caught', function(){
-      return co(function *(){
+    it('should be caught', function(done){
+      co(function *(){
         try {
           var a = yield get(1, null, new Error('boom'));
         } catch (err) {
-          assert.equal('boom', err.message);
+          err.message.should.equal('boom');
         }
-      });
+      })(done);
     })
   })
 
   describe('when an error is passed then thrown', function(){
-    it('should only catch the first error only', function(){
-      return co(function *() {
+    it('should only catch the first error only', function(done){
+      co(function *() {
         yield function (done){
           done(new Error('first'));
           throw new Error('second');
         }
-      }).then(function () {
-        throw new Error('wtf')
-      }, function(err){
-        assert.equal('first', err.message);
+      })(function(err){
+        err.message.should.equal('first');
+        done();
       });
     })
   })
 
   describe('when an error is passed', function(){
-    it('should throw and resume', function(){
+    it('should throw and resume', function(done){
       var error;
 
-      return co(function *(){
+      co(function *(){
         try {
           yield get(1, new Error('boom'));
         } catch (err) {
@@ -96,21 +96,21 @@ describe('co(* -> yield fn(done))', function () {
         assert('boom' == error.message);
         var ret = yield get(1);
         assert(1 == ret);
-      });
+      })(done);
     })
   })
 
   describe('with nested co()s', function(){
-    it('should work', function(){
+    it('should work', function(done){
       var hit = [];
 
-      return co(function *(){
+      co(function *(){
         var a = yield get(1);
         var b = yield get(2);
         var c = yield get(3);
         hit.push('one');
 
-        assert.deepEqual([1, 2, 3], [a, b, c])
+        [a,b,c].should.eql([1,2,3]);
 
         yield co(function *(){
           hit.push('two');
@@ -118,7 +118,7 @@ describe('co(* -> yield fn(done))', function () {
           var b = yield get(2);
           var c = yield get(3);
 
-          assert.deepEqual([1, 2, 3], [a, b, c])
+          [a,b,c].should.eql([1,2,3]);
 
           yield co(function *(){
             hit.push('three');
@@ -126,7 +126,7 @@ describe('co(* -> yield fn(done))', function () {
             var b = yield get(2);
             var c = yield get(3);
 
-            assert.deepEqual([1, 2, 3], [a, b, c])
+            [a,b,c].should.eql([1,2,3]);
           });
         });
 
@@ -136,32 +136,36 @@ describe('co(* -> yield fn(done))', function () {
           var b = yield get(2);
           var c = yield get(3);
 
-          assert.deepEqual([1, 2, 3], [a, b, c])
+          [a,b,c].should.eql([1,2,3]);
         });
 
-        assert.deepEqual(['one', 'two', 'three', 'four'], hit);
-      });
+        hit.should.eql(['one', 'two', 'three', 'four']);
+      })(done);
     })
   })
 
   describe('return values', function(){
     describe('with a callback', function(){
-      it('should be passed', function(){
-        return co(function *(){
+      it('should be passed', function(done){
+        var fn = co(function *(){
           return [
             yield get(1),
             yield get(2),
             yield get(3)
           ];
-        }).then(function (res) {
-          assert.deepEqual([1, 2, 3], res);
+        });
+
+        fn(function(err, res){
+          if (err) return done(err);
+          res.should.eql([1,2,3]);
+          done();
         });
       })
     })
 
     describe('when nested', function(){
-      it('should return the value', function(){
-        return co(function *(){
+      it('should return the value', function(done){
+        var fn = co(function *(){
           var other = yield co(function *(){
             return [
               yield get(4),
@@ -175,18 +179,22 @@ describe('co(* -> yield fn(done))', function () {
             yield get(2),
             yield get(3)
           ].concat(other);
-        }).then(function (res) {
-          assert.deepEqual([1, 2, 3, 4, 5, 6], res);
+        });
+
+        fn(function(err, res){
+          if (err) return done(err);
+          res.should.eql([1,2,3,4,5,6]);
+          done();
         });
       })
     })
   })
 
   describe('when yielding neither a function nor a promise', function(){
-    it('should throw', function(){
+    it('should throw', function(done){
       var errors = [];
 
-      return co(function *(){
+      co(function *(){
         try {
           var a = yield 'something';
         } catch (err) {
@@ -199,19 +207,19 @@ describe('co(* -> yield fn(done))', function () {
           errors.push(err.message);
         }
 
-        assert.equal(2, errors.length);
+        errors.length.should.equal(2);
         var msg = 'yield a function, promise, generator, array, or object';
-        assert(~errors[0].indexOf(msg));
-        assert(~errors[1].indexOf(msg));
-      });
+        errors[0].should.include(msg);
+        errors[1].should.include(msg);
+      })(done);
     })
   })
 
   describe('with errors', function(){
-    it('should throw', function(){
+    it('should throw', function(done){
       var errors = [];
 
-      return co(function *(){
+      co(function *(){
         try {
           var a = yield get(1, new Error('foo'));
         } catch (err) {
@@ -224,14 +232,14 @@ describe('co(* -> yield fn(done))', function () {
           errors.push(err.message);
         }
 
-        assert.deepEqual(['foo', 'bar'], errors);
-      });
+        errors.should.eql(['foo', 'bar']);
+      })(done);
     })
 
-    it('should catch errors on .send()', function(){
+    it('should catch errors on .send()', function(done){
       var errors = [];
 
-      return co(function *(){
+      co(function *(){
         try {
           var a = yield get(1, null, new Error('foo'));
         } catch (err) {
@@ -244,38 +252,89 @@ describe('co(* -> yield fn(done))', function () {
           errors.push(err.message);
         }
 
-        assert.deepEqual(['foo', 'bar'], errors);
-      });
+        errors.should.eql(['foo', 'bar']);
+      })(done);
     })
 
-    it('should pass future errors to the callback', function(){
-      return co(function *(){
+    it('should pass future errors to the callback', function(done){
+      co(function *(){
         yield get(1);
         yield get(2, null, new Error('fail'));
         assert(false);
         yield get(3);
-      }).catch(function(err){
-        assert.equal('fail', err.message);
+      })(function(err){
+        err.message.should.equal('fail');
+        done();
       });
     })
 
-    it('should pass immediate errors to the callback', function(){
-      return co(function *(){
+    it('should pass immediate errors to the callback', function(done){
+      co(function *(){
         yield get(1);
         yield get(2, new Error('fail'));
         assert(false);
         yield get(3);
-      }).catch(function(err){
-        assert.equal('fail', err.message);
+      })(function(err){
+        err.message.should.equal('fail');
+        done();
       });
     })
 
-    it('should catch errors on the first invocation', function(){
-      return co(function *(){
+    it('should catch errors on the first invocation', function(done){
+      co(function *(){
         throw new Error('fail');
-      }).catch(function(err){
-        assert.equal('fail', err.message);
+      })(function(err){
+        err.message.should.equal('fail');
+        done();
       });
+    })
+
+    describe('when no callback is provided', function(){
+      it('should rethrow', function(done){
+        var addProcessListeners = removeProcessListeners();
+
+        process.once('uncaughtException', function(err){
+          err.message.should.equal('boom');
+          addProcessListeners();
+          done();
+        })
+
+        co(function *(){
+          yield function (done) {
+            setImmediate(function () {
+              done(new Error('boom'));
+            })
+          }
+        })();
+      })
+
+      it('should rethrow on a synchronous thunk', function(done){
+        var addProcessListeners = removeProcessListeners();
+
+        process.once('uncaughtException', function(err){
+          err.message.should.equal('boom');
+          addProcessListeners();
+          done();
+        })
+
+        co(function *(){
+          yield function (done) {
+            done(new Error('boom'));
+          }
+        })();
+      })
     })
   })
 })
+
+function removeProcessListeners(){
+  // Remove mocha listeners first.
+  var listeners = process.listeners('uncaughtException');
+  process.removeAllListeners('uncaughtException');
+
+  return function addProcessListeners(){
+    listeners.forEach(function(listener){
+      process.on('uncaughtException', listener);
+    });
+  }
+}

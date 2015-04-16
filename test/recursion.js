@@ -1,29 +1,30 @@
 
-var read = require('mz/fs').readFile;
-var assert = require('assert');
-
+var thunk = require('thunkify');
 var co = require('..');
+var fs = require('fs');
+
+var read = thunk(fs.readFile);
 
 describe('co() recursion', function(){
-  it('should aggregate arrays within arrays', function(){
-    return co(function *(){
+  it('should aggregate arrays within arrays', function(done){
+    co(function *(){
       var a = read('index.js', 'utf8');
-      var b = read('LICENSE', 'utf8');
+      var b = read('Makefile', 'utf8');
       var c = read('package.json', 'utf8');
 
       var res = yield [a, [b, c]];
-      assert.equal(2, res.length);
-      assert(~res[0].indexOf('exports'));
-      assert.equal(2, res[1].length);
-      assert(~res[1][0].indexOf('MIT'));
-      assert(~res[1][1].indexOf('devDependencies'));
-    });
+      res.should.have.length(2);
+      res[0].should.include('exports');
+      res[1].should.have.length(2);
+      res[1][0].should.include('test');
+      res[1][1].should.include('devDependencies');
+    })(done);
   })
 
-  it('should aggregate objects within objects', function(){
-    return co(function *(){
+  it('should aggregate objects within objects', function(done){
+    co(function *(){
       var a = read('index.js', 'utf8');
-      var b = read('LICENSE', 'utf8');
+      var b = read('Makefile', 'utf8');
       var c = read('package.json', 'utf8');
 
       var res = yield {
@@ -34,9 +35,9 @@ describe('co() recursion', function(){
         }
       };
 
-      assert(~res[0].indexOf('exports'));
-      assert(~res[1][0].indexOf('MIT'));
-      assert(~res[1][1].indexOf('devDependencies'));
-    });
+      res[0].should.include('exports');
+      res[1][0].should.include('test');
+      res[1][1].should.include('devDependencies');
+    })(done);
   })
 })

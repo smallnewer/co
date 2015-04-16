@@ -1,14 +1,7 @@
 {
-  "name": "co",
+  "name": "co-generator",
   "version": "3.1.0",
-  "description": "generator async flow control goodness",
-  "keywords": [
-    "async",
-    "flow",
-    "generator",
-    "coro",
-    "coroutine"
-  ],
+  "description": "基于co generator版进行修复的流程控制库",
   "devDependencies": {
     "should": "^3.0.0",
     "mocha": "^1.12.0",
